@@ -17,6 +17,7 @@ import com.google.mlkit.nl.smartreply.TextMessage
 class MainActivity : AppCompatActivity() {
     val arrayMessage = ArrayList<String>()
     lateinit var arrayAdapterMessage : ArrayAdapter<*>
+
     val smartReply = SmartReply.getClient()
     val conversation = ArrayList<TextMessage>()
 
@@ -31,10 +32,11 @@ class MainActivity : AppCompatActivity() {
         val listView: ListView = findViewById(R.id.listViewMessage)
 
         arrayAdapterMessage = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayMessage)
+        listView.adapter = arrayAdapterMessage
 
         buttonSend.setOnClickListener {
             if(editTextMessage.text.isEmpty()){
-                editTextMessage.setError("Please enter text")
+                editTextMessage.setError("Value required")
                 return@setOnClickListener
             }
             val message: String = editTextMessage.text.toString()
@@ -44,24 +46,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         buttoReply.setOnClickListener {
-            val reply = editTextMessage.text.toString()
+            if(editTextReply.text.isEmpty()){
+                editTextReply.setError("Value required")
+                return@setOnClickListener
+            }
+            val reply = editTextReply.text.toString()
             arrayMessage.add("Reply : $reply")
-            conversation.add(TextMessage.createForRemoteUser(reply, System.currentTimeMillis(), "MLKit"))
+            conversation.add(TextMessage.createForRemoteUser(reply, System.currentTimeMillis(),
+                "MLKit"))
             editTextReply.text.clear()
 
             smartReply.suggestReplies(conversation)
-                .addOnSuccessListener {result ->
+                .addOnSuccessListener { result ->
                     if(result.status == SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE){
-                        Toast.makeText(this, "Language is not supported", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Language is not supported",
+                            Toast.LENGTH_SHORT).show()
                     }else if(result.status == SmartReplySuggestionResult.STATUS_SUCCESS){
-                        arrayMessage.clear()
+                        //Get replies from the Smart Reply Client
                         for(suggestion in result.suggestions){
                             arrayMessage.add(suggestion.text)
                         }
-                        listView.adapter = arrayAdapterMessage
+                        arrayAdapterMessage.notifyDataSetChanged()
                     }
                 }
-                .addOnFailureListener { result ->
+                .addOnFailureListener {
                     Toast.makeText(this, "Task failed", Toast.LENGTH_SHORT).show()
                 }
         }
