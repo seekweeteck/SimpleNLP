@@ -25,38 +25,45 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val buttonSend: Button = findViewById(R.id.buttonSend)
+        val buttoReply: Button = findViewById(R.id.buttonReply)
         val editTextMessage: EditText = findViewById(R.id.editTextMessage)
+        val editTextReply: EditText = findViewById(R.id.editTextReply)
         val listView: ListView = findViewById(R.id.listViewMessage)
 
-
         arrayAdapterMessage = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayMessage)
-        //listView.adapter = arrayAdapterMessage
-        
-        buttonSend.setOnClickListener {
-            val message: String = editTextMessage.text.toString()
-            arrayMessage.add("Question:" + message)
 
+        buttonSend.setOnClickListener {
+            if(editTextMessage.text.isEmpty()){
+                editTextMessage.setError("Please enter text")
+                return@setOnClickListener
+            }
+            val message: String = editTextMessage.text.toString()
+            arrayMessage.add("Send : $message")
             conversation.add(TextMessage.createForLocalUser(message, System.currentTimeMillis()))
+            editTextMessage.text.clear()
+        }
+
+        buttoReply.setOnClickListener {
+            val reply = editTextMessage.text.toString()
+            arrayMessage.add("Reply : $reply")
+            conversation.add(TextMessage.createForRemoteUser(reply, System.currentTimeMillis(), "MLKit"))
+            editTextReply.text.clear()
 
             smartReply.suggestReplies(conversation)
                 .addOnSuccessListener {result ->
                     if(result.status == SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE){
                         Toast.makeText(this, "Language is not supported", Toast.LENGTH_SHORT).show()
-                        Log.d("Error", "Language is not supported")
                     }else if(result.status == SmartReplySuggestionResult.STATUS_SUCCESS){
+                        arrayMessage.clear()
                         for(suggestion in result.suggestions){
-                            arrayMessage.add("Reply:" + suggestion.text)
-                            conversation.add(TextMessage.createForRemoteUser(suggestion.text, System.currentTimeMillis(), "MLKit"))
-                            Log.d("Reply", suggestion.text)
+                            arrayMessage.add(suggestion.text)
                         }
                         listView.adapter = arrayAdapterMessage
                     }
                 }
                 .addOnFailureListener { result ->
                     Toast.makeText(this, "Task failed", Toast.LENGTH_SHORT).show()
-                    Log.d("Error", result.toString())
                 }
-
         }
     }
 }
